@@ -1,0 +1,7 @@
+-- OVERVIEW --
+[] ai ask - command that spits out a response  
+[] ai setup - command to set up the base model, api keys, system prompt
+[] ai ask --model=claude-3.5 - command to ask a specific model
+[] ai ask --file {local_file_path} - command to put the whole file in prompt
+[] format ai output:
+    [] format code blocks
