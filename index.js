@@ -55,7 +55,7 @@ function question(query) {
   return new Promise((resolve) => rl.question(query, resolve));
 }
 
-// Cost per 1K tokens (as of March 2024)
+// Cost per milli tokens
 const COSTS = {
   openai: {
     "gpt-3.5-turbo": {
@@ -64,9 +64,21 @@ const COSTS = {
     },
   },
   anthropic: {
+    "claude-3-7-sonnet-20250219": {
+      input: 3,
+      output: 15,
+    },
+    "claude-3-5-sonnet-20241022": {
+      input: 3,
+      output: 15,
+    },
+    "claude-3-5-haiku-20241022": {
+      input: 0.8,
+      output: 4,
+    },
     "claude-3-haiku-20240307": {
-      input: 0.00025, // $0.00025 per 1K tokens
-      output: 0.00125, // $0.00125 per 1K tokens
+      input: 0.25,
+      output: 1.25,
     },
   },
 };
@@ -77,8 +89,8 @@ function calculateCost(model, inputTokens, outputTokens) {
       model === "chatgpt" ? "gpt-3.5-turbo" : "claude-3-haiku-20240307"
     ];
 
-  const inputCost = (inputTokens / 1000) * costs.input;
-  const outputCost = (outputTokens / 1000) * costs.output;
+  const inputCost = (inputTokens / 1000000) * costs.input;
+  const outputCost = (outputTokens / 1000000) * costs.output;
   return inputCost + outputCost;
 }
 
@@ -109,6 +121,23 @@ function parseEnv() {
   return envVars;
 }
 
+// Get available models
+function getAvailableModels() {
+  const models = [];
+  Object.entries(COSTS).forEach(([provider, providerModels]) => {
+    Object.keys(providerModels).forEach((model) => {
+      models.push({
+        provider: provider,
+        name: model,
+        displayName: `${model} (${
+          provider === "openai" ? "OpenAI" : "Anthropic"
+        })`,
+      });
+    });
+  });
+  return models;
+}
+
 program.name("ai").description("My awesome CLI tool").version("1.0.0");
 
 program
@@ -124,6 +153,7 @@ program
   .action(async () => {
     const config = loadConfig();
     const envVars = parseEnv();
+    const availableModels = getAvailableModels();
 
     console.log("\n=== AI CLI Setup ===\n");
 
@@ -148,11 +178,22 @@ program
 
     // Configure default model
     console.log("\nAvailable models:");
-    console.log("1. Claude (claude-3-haiku-20240307)");
-    console.log("2. ChatGPT (gpt-3.5-turbo)");
+    availableModels.forEach((model, index) => {
+      console.log(`${index + 1}. ${model.displayName}`);
+    });
 
-    const modelChoice = await question("\nChoose default model (1 or 2): ");
-    config.defaultModel = modelChoice === "1" ? "claude" : "chatgpt";
+    const modelChoice = await question(
+      `\nChoose default model (1-${availableModels.length}): `
+    );
+    const selectedModel = availableModels[parseInt(modelChoice) - 1];
+    if (!selectedModel) {
+      console.error("Invalid model choice");
+      process.exit(1);
+    }
+
+    config.defaultModel =
+      selectedModel.provider === "openai" ? "chatgpt" : "claude";
+    config.defaultModelName = selectedModel.name;
 
     // Configure system prompt
     console.log("\nCurrent system prompt:", config.systemPrompt);
@@ -176,16 +217,6 @@ program
     const config = loadConfig();
     const model = options.model || config.defaultModel;
 
-    // Initialize OpenAI client
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-
-    // Initialize Anthropic client
-    const anthropic = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
-    });
-
     if (!config.enabledModels[model]) {
       console.error(
         `Model ${model} is not enabled. Please run 'ai setup' to enable it.`
@@ -198,10 +229,20 @@ program
       process.exit(1);
     }
 
+    // Initialize OpenAI client
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    // Initialize Anthropic client
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
+
     try {
       if (model === "chatgpt") {
         const stream = await openai.chat.completions.create({
-          model: "gpt-3.5-turbo",
+          model: config.defaultModelName || "gpt-3.5-turbo",
           messages: [
             { role: "system", content: config.systemPrompt },
             { role: "user", content: question },
@@ -222,13 +263,14 @@ program
         );
         const cost = calculateCost(model, inputTokens, outputTokens);
         console.log(
-          `\n\nCost: $${cost.toFixed(
+          `\n\nModel used: ${config.defaultModelName}\nCost: $${cost.toFixed(
             6
           )} (Input: ${inputTokens} tokens, Output: ${outputTokens} tokens)`
         );
+        process.exit(1);
       } else if (model === "claude") {
         const stream = await anthropic.messages.create({
-          model: "claude-3-haiku-20240307",
+          model: config.defaultModelName || "claude-3-haiku-20240307",
           max_tokens: 1024,
           system: config.systemPrompt,
           messages: [{ role: "user", content: question }],
@@ -249,7 +291,7 @@ program
         );
         const cost = calculateCost(model, inputTokens, outputTokens);
         console.log(
-          `\n\nCost: $${cost.toFixed(
+          `\n\nModel used: ${config.defaultModelName}\nCost: $${cost.toFixed(
             6
           )} (Input: ${inputTokens} tokens, Output: ${outputTokens} tokens)`
         );
