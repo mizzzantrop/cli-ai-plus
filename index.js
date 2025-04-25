@@ -6,8 +6,9 @@ const Anthropic = require("@anthropic-ai/sdk");
 const fs = require("fs");
 const fsPromises = require('fs').promises;
 const readline = require("readline");
+const path = require("path");
 
-const CONFIG_FILE = "./config.json"
+const CONFIG_FILE = path.join(__dirname, "./config.json");
 
 // Default configuration
 const DEFAULT_CONFIG = {
@@ -49,7 +50,7 @@ function question(query) {
 }
 
 async function calculateCost(model, modelProvider, inputTokens, outputTokens) {
-  const models = JSON.parse(await fsPromises.readFile('./models.json', 'utf8'));
+  const models = JSON.parse(await fsPromises.readFile(path.join(__dirname,'./models.json'), 'utf8'));
 
   const costs = models[modelProvider][model];
 
@@ -61,7 +62,7 @@ async function calculateCost(model, modelProvider, inputTokens, outputTokens) {
 // Get available models
 async function getAvailableModels() {
   const models = []
-  const data = JSON.parse(await fsPromises.readFile('./models.json', 'utf8'));
+  const data = JSON.parse(await fsPromises.readFile(path.join(__dirname,'./models.json'), 'utf8'));
 
   Object.entries(data).forEach(([provider, providerModels]) => {
     Object.keys(providerModels).forEach((model) => {
