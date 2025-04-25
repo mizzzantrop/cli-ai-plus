@@ -1,6 +1,6 @@
 # AI CLI
 
-Welcome to AI CLI, an open source cli application that allows you to use an AI copilot right inside of your teminal, like you would in Cursor or Windsurf
+Welcome to AI CLI, an open source cli application that allows you to use an AI copilot right inside your terminal, like you would in Cursor or Windsurf
 
 ## Installation
 
