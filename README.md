@@ -42,14 +42,21 @@ Before using the CLI, you'll need to:
 2. Run `ai setup` to configure your keys and preferences
 
 ## Models Supported
+> Note: These are the models supported by default, you can change this by editing models.json
 
 - OpenAI
-  - GPT-3.5 Turbo
+  - GPT 4.1
+  - GPT 4.1 mini
+  - GPT 4.1 nano
+  - GPT 4o
+  - GPT 4o mini
+  - o4
+  - o4 mini
 - Anthropic
-  - Claude 3 Haiku
-  - Claude 3.5 Haiku
-  - Claude 3.5 Sonnet
   - Claude 3.7 Sonnet
+  - Claude 3.5 Sonnet
+  - Claude 3.5 Haiku
+  - Claude 3 Haiku
 
 ## License
 
