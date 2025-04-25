@@ -141,13 +141,6 @@ function getAvailableModels() {
 program.name("ai").description("My awesome CLI tool").version("1.0.0");
 
 program
-  .command("greet <name>")
-  .description("Greet someone")
-  .action((name) => {
-    console.log(`Hello, ${name}!`);
-  });
-
-program
   .command("setup")
   .description("Configure AI models, system prompt, and API keys")
   .action(async () => {
