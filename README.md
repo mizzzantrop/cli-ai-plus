@@ -30,6 +30,8 @@ ai --help
 ### Available Commands
 
 - `ai ask <question>` - Ask a question to the AI
+   - `ai --model <model> ask <question>`
+   - `ai -m <model> ask <question>`
 - `ai setup` - Configure API keys and preferences
 - `ai helloworld` - Test the installation
 
