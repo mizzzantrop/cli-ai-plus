@@ -1,21 +1,52 @@
 {
   "name": "cli-ai",
   "version": "1.0.0",
+  "description": "A CLI tool for interacting with AI models (OpenAI and Anthropic)",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "npm run lint",
+    "lint": "eslint .",
+    "format": "prettier --write ."
   },
   "bin": {
     "ai": "./index.js"
   },
-  "keywords": [],
+  "keywords": [
+    "cli",
+    "ai",
+    "openai",
+    "anthropic",
+    "chatgpt",
+    "claude",
+    "command-line"
+  ],
   "author": "",
-  "license": "ISC",
-  "description": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "commander": "^13.1.0",
     "dotenv": "^16.5.0",
     "openai": "^4.93.0"
-  }
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.5"
+  },
+  "files": [
+    "index.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/cli-ai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/cli-ai/issues"
+  },
+  "homepage": "https://github.com/yourusername/cli-ai#readme"
 }

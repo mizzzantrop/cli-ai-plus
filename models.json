@@ -1,0 +1,50 @@
+{
+  "openai": {
+    "gpt-4.1-2025-04-14": {
+      "input": 2,
+      "output": 8
+    },
+    "gpt-4.1-mini-2025-04-14": {
+      "input": 0.4,
+      "output": 1.6
+    },
+    "gpt-4o-2024-08-06": {
+      "input": 2.5,
+      "output": 10
+    },
+    "gpt-4o-mini-2024-07-18": {
+      "input": 0.15,
+      "output": 0.6
+    },
+    "o4-2025-04-16": {
+      "input": 1.1,
+      "output": 4.4
+    },
+    "o4-mini-2025-04-16": {
+      "input": 1.1,
+      "output": 4.4
+    },
+    "gpt-4.1-nano-2025-04-14": {
+      "input": 0.1,
+      "output": 0.4
+    }
+  },
+  "anthropic": {
+    "claude-3-7-sonnet-20250219": {
+      "input": 3,
+      "output": 15
+    },
+    "claude-3-5-sonnet-20241022": {
+      "input": 3,
+      "output": 15
+    },
+    "claude-3-5-haiku-20241022": {
+      "input": 0.8,
+      "output": 4
+    },
+    "claude-3-haiku-20240307": {
+      "input": 0.25,
+      "output": 1.25
+    }
+  }
+}
