@@ -4,9 +4,10 @@ const { program } = require("commander");
 const { OpenAI } = require("openai");
 const Anthropic = require("@anthropic-ai/sdk");
 const fs = require("fs");
-const fsPromises = require('fs').promises;
+const fsPromises = require("fs").promises;
 const readline = require("readline");
 const path = require("path");
+const chalk = require("chalk");
 
 const CONFIG_FILE = path.join(__dirname, "./config.json");
 
@@ -16,8 +17,8 @@ const DEFAULT_CONFIG = {
   systemPrompt: "You are a helpful AI assistant.",
   OPENAI_API_KEY: "",
   ANTHROPIC_API_KEY: "",
-  defaultProvider: "anthropic"
-}
+  defaultProvider: "anthropic",
+};
 
 // Ensure config file exists and load config
 function loadConfig() {
@@ -27,7 +28,7 @@ function loadConfig() {
   }
 
   try {
-    return JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"))
+    return JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"));
   } catch (error) {
     return DEFAULT_CONFIG;
   }
@@ -50,7 +51,9 @@ function question(query) {
 }
 
 async function calculateCost(model, modelProvider, inputTokens, outputTokens) {
-  const models = JSON.parse(await fsPromises.readFile(path.join(__dirname,'./models.json'), 'utf8'));
+  const models = JSON.parse(
+    await fsPromises.readFile(path.join(__dirname, "./models.json"), "utf8")
+  );
 
   const costs = models[modelProvider][model];
 
@@ -61,24 +64,30 @@ async function calculateCost(model, modelProvider, inputTokens, outputTokens) {
 
 // Get available models
 async function getAvailableModels() {
-  const models = []
-  const data = JSON.parse(await fsPromises.readFile(path.join(__dirname,'./models.json'), 'utf8'));
+  const models = [];
+  const data = JSON.parse(
+    await fsPromises.readFile(path.join(__dirname, "./models.json"), "utf8")
+  );
 
   Object.entries(data).forEach(([provider, providerModels]) => {
     Object.keys(providerModels).forEach((model) => {
       models.push({
         provider: provider,
         name: model,
-        displayName: `${model} (${provider === "openai" ? "OpenAI" : "Anthropic"
-          })`,
+        displayName: `${model} (${
+          provider === "openai" ? "OpenAI" : "Anthropic"
+        })`,
       });
     });
   });
 
-  return models
+  return models;
 }
 
-program.name("ai").description("AI code copilot right in your terminal").version("1.0.0");
+program
+  .name("ai")
+  .description("AI code copilot right in your terminal")
+  .version("1.0.0");
 
 program
   .command("helloworld")
@@ -98,7 +107,9 @@ program
     console.log("\n=== AI CLI Setup ===\n");
 
     // Configure API keys
-    console.log("API Key Configuration (warning: API keys will be stored in config.json file inside project's directory):");
+    console.log(
+      "API Key Configuration (warning: API keys will be stored in config.json file inside project's directory):"
+    );
     console.log(
       "(Press Enter to keep existing value or leave blank to remove)\n"
     );
@@ -150,10 +161,53 @@ program
     rl.close();
   });
 
+function formatAndOutputCodeBlock(output, codeFormattingFlag) {
+  const codeBlockRegex = /```/g;
+
+  const match = codeBlockRegex.exec(output);
+
+  if (match && !codeFormattingFlag) {
+    codeFormattingFlag = true;
+    const beforeMatchStart = output.slice(0, match.index);
+    const afterMatchStart = output.slice(match.index + match[0].length);
+    if (beforeMatchStart) {
+      process.stdout.write(beforeMatchStart);
+    }
+
+    if (afterMatchStart) {
+      process.stdout.write(chalk.green(afterMatchStart));
+    }
+  } else if (match && codeFormattingFlag) {
+    codeFormattingFlag = false;
+    const beforeMatchEnd = output.slice(0, match.index);
+    const afterMatchEnd = output.slice(match.index + match[0].length);
+    if (beforeMatchEnd) {
+      process.stdout.write(chalk.green(beforeMatchEnd));
+    }
+
+    if (afterMatchEnd) {
+      process.stdout.write(afterMatchEnd);
+    }
+  }
+
+  if (!match) {
+    if (codeFormattingFlag) {
+      process.stdout.write(chalk.green(output));
+    } else {
+      process.stdout.write(output);
+    }
+  }
+
+  return codeFormattingFlag;
+}
+
 program
   .command("ask <question>")
   .description("Ask a question to an AI model")
-  .option("-m, --model <model>", "Specify a model from the list of available models (models.json)")
+  .option(
+    "-m, --model <model>",
+    "Specify a model from the list of available models (models.json)"
+  )
   .action(async (question, options) => {
     const config = loadConfig();
     const modelName = options.model || config.defaultModel;
@@ -161,16 +215,20 @@ program
 
     // check if the specified model is available + set the provider (only if the user has specified a model)
     if (options.model) {
-      const availableModels = await getAvailableModels()
-      const availableModelNames = availableModels.map(model => model.name)
+      const availableModels = await getAvailableModels();
+      const availableModelNames = availableModels.map((model) => model.name);
 
       // check if the specified model is available
-      if (!availableModelNames.find(m => m === modelName)) {
-        console.error(`Model ${modelName} not found. Please run 'ai setup' to enable it.`);
+      if (!availableModelNames.find((m) => m === modelName)) {
+        console.error(
+          `Model ${modelName} not found. Please run 'ai setup' to enable it.`
+        );
         process.exit(1);
       }
 
-      modelProvider = availableModels.find(model => model.name === modelName)?.provider
+      modelProvider = availableModels.find(
+        (model) => model.name === modelName
+      )?.provider;
     }
 
     // check if the user has set the API keys
@@ -185,6 +243,7 @@ program
 
     try {
       let outputTokens = 0;
+      let codeFormattingFlag = false;
 
       if (modelProvider === "openai") {
         const openai = new OpenAI({
@@ -201,9 +260,15 @@ program
         });
 
         for await (const chunk of stream) {
-          const content = chunk.choices[0]?.delta?.content || "";
-          process.stdout.write(content);
-          if (content) outputTokens++;
+          const output = chunk.choices[0]?.delta?.content || "";
+
+          if (output) {
+            codeFormattingFlag = formatAndOutputCodeBlock(
+              output,
+              codeFormattingFlag
+            );
+            outputTokens++;
+          }
         }
       } else if (modelProvider === "anthropic") {
         const anthropic = new Anthropic({
@@ -220,12 +285,22 @@ program
 
         for await (const chunk of stream) {
           if (chunk.type === "content_block_delta") {
-            process.stdout.write(chunk.delta.text);
-            outputTokens++;
+            const output = chunk.delta.text;
+
+            if (output) {
+              codeFormattingFlag = formatAndOutputCodeBlock(
+                output,
+                codeFormattingFlag
+              );
+
+              outputTokens++;
+            }
           }
         }
       } else {
-        console.error("Invalid model provider. Please use 'anthropic' or 'openai'");
+        console.error(
+          "Invalid model provider. Please use 'anthropic' or 'openai'"
+        );
         process.exit(1);
       }
 
@@ -234,7 +309,12 @@ program
         (question.length + config.systemPrompt.length) / 4
       );
 
-      const cost = await calculateCost(modelName, modelProvider, inputTokens, outputTokens);
+      const cost = await calculateCost(
+        modelName,
+        modelProvider,
+        inputTokens,
+        outputTokens
+      );
 
       console.log(
         `\n\nModel used: ${modelName}\nCost: $${cost.toFixed(
