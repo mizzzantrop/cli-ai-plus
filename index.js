@@ -75,7 +75,9 @@ async function getAvailableModels() {
         provider: provider,
         name: model,
         displayName: `${model} (${
-          provider === "openai" ? "OpenAI" : "Anthropic"
+          provider === "openai"
+            ? chalk.hex("#74AA9C")("OpenAI")
+            : chalk.hex("#da7756")("Anthropic")
         })`,
       });
     });
@@ -104,29 +106,44 @@ program
     const config = loadConfig();
     const availableModels = await getAvailableModels();
 
-    console.log("\n=== AI CLI Setup ===\n");
+    // console.log("\n=== AI CLI Setup ===\n");
+
+    console.log(chalk.blue("┌" + "─".repeat(30) + "┐"));
+    console.log(chalk.blue("│") + " ".repeat(30) + chalk.blue("│"));
+    console.log(
+      chalk.blue("│") + "         AI CLI Setup         " + chalk.blue("│")
+    );
+    console.log(chalk.blue("│") + " ".repeat(30) + chalk.blue("│"));
+    console.log(chalk.blue("└" + "─".repeat(30) + "┘"));
 
     // Configure API keys
     console.log(
-      "API Key Configuration (warning: API keys will be stored in config.json file inside project's directory):"
+      "API Key Configuration " +
+        chalk.red(
+          "(warning: API keys will be stored in config.json file inside project's directory):"
+        )
     );
     console.log(
-      "(Press Enter to keep existing value or leave blank to remove)\n"
+      chalk.gray(
+        "(Press Enter to keep existing value or leave blank to remove)\n"
+      )
     );
 
-    const openaiKey = await question("Enter OpenAI API Key: ");
+    const openaiKey = await question(
+      "Enter" + chalk.hex("#74AA9C")(" OpenAI ") + "API Key: "
+    );
     if (openaiKey !== "") {
       config.OPENAI_API_KEY = openaiKey;
     }
 
-    const anthropicKey = await question("Enter Anthropic API Key: ");
+    const anthropicKey = await question(
+      "Enter" + chalk.hex("#da7756")(" Anthropic ") + "API Key: "
+    );
     if (anthropicKey !== "") {
       config.ANTHROPIC_API_KEY = anthropicKey;
     }
 
     saveConfig(config);
-
-    console.log("\nAPI keys saved successfully!");
 
     // Configure default model
     console.log("\nAvailable models:");
@@ -148,16 +165,19 @@ program
     config.defaultModel = selectedModel.name;
 
     // Configure system prompt
-    console.log("\nCurrent system prompt:", config.systemPrompt);
+    console.log(
+      "\nCurrent system prompt:",
+      chalk.gray('"' + config.systemPrompt + '"')
+    );
     const newPrompt = await question(
-      "Enter new system prompt (press Enter to keep current): "
+      `Enter new system prompt: \n${chalk.gray("(press Enter to keep current)")}\n`
     );
     if (newPrompt.trim()) {
       config.systemPrompt = newPrompt;
     }
 
     saveConfig(config);
-    console.log("\nConfiguration saved successfully!");
+    console.log(chalk.greenBright("\nConfiguration saved successfully!"));
     rl.close();
   });
 
@@ -317,9 +337,11 @@ program
       );
 
       console.log(
-        `\n\nModel used: ${modelName}\nCost: $${cost.toFixed(
-          6
-        )} (Input: ${inputTokens} tokens, Output: ${outputTokens} tokens)`
+        chalk.gray(
+          `\n\nModel used: ${modelName}\nCost: $${cost.toFixed(
+            6
+          )} (Input: ${inputTokens} tokens, Output: ${outputTokens} tokens)`
+        )
       );
       process.exit(0);
     } catch (error) {
