@@ -3,118 +3,100 @@
 const { program } = require("commander");
 const { OpenAI } = require("openai");
 const Anthropic = require("@anthropic-ai/sdk");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const Groq = require("groq-sdk");
 const fs = require("fs");
 const fsPromises = require("fs").promises;
-const readline = require("readline");
-const path = require("path");
-const chalk = require("chalk");
-
-const CONFIG_FILE = path.join(__dirname, "./config.json");
-
-// Default configuration
-const DEFAULT_CONFIG = {
-  defaultModel: "gpt-4.1-nano-2025-04-14",
-  systemPrompt: "You are a helpful AI assistant.",
-  OPENAI_API_KEY: "",
-  ANTHROPIC_API_KEY: "",
-  defaultProvider: "anthropic",
-};
-
-// Ensure config file exists and load config
-function loadConfig() {
-  if (!fs.existsSync(CONFIG_FILE)) {
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(DEFAULT_CONFIG, null, 2));
-    return DEFAULT_CONFIG;
-  }
-
-  try {
-    return JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"));
-  } catch (error) {
-    return DEFAULT_CONFIG;
-  }
-}
-
-// Save configuration
-function saveConfig(config) {
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
-}
-
-// Create readline interface for user input
-const rl = readline.createInterface({
+const readline = require("readline").createInterface({
   input: process.stdin,
   output: process.stdout,
 });
+const path = require("path");
+const chalk = require("chalk");
 
-// Promisify readline question
-function question(query) {
-  return new Promise((resolve) => rl.question(query, resolve));
+const CONFIG_FILE = path.join(__dirname, "config.json");
+const MODELS_FILE = path.join(__dirname, "models.json");
+
+let config = loadConfig();
+const modelsData = loadModels();
+
+function loadConfig() {
+  try {
+    const data = fs.readFileSync(CONFIG_FILE, "utf8");
+    return JSON.parse(data);
+  } catch (error) {
+    return {
+      defaultModel: "gemini-pro",
+      systemPrompt: "You are a helpful AI assistant specializing in analyzing and improving code. Identify syntax errors, logical bugs, and suggest best practices.",
+      OPENAI_API_KEY: "",
+      ANTHROPIC_API_KEY: "",
+      GEMINI_API_KEY: "",
+      GROQ_API_KEY: "",
+      defaultProvider: "gemini",
+    };
+  }
 }
 
-async function calculateCost(model, modelProvider, inputTokens, outputTokens) {
-  const models = JSON.parse(
-    await fsPromises.readFile(path.join(__dirname, "./models.json"), "utf8")
-  );
+function saveConfig(config) {
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), "utf8");
+}
 
-  const costs = models[modelProvider][model];
+function loadModels() {
+  try {
+    const data = fs.readFileSync(MODELS_FILE, "utf8");
+    return JSON.parse(data);
+  } catch (error) {
+    console.error("Error loading models.json:", error);
+    return {};
+  }
+}
 
-  const inputCost = (inputTokens / 1000000) * costs.input;
-  const outputCost = (outputTokens / 1000000) * costs.output;
+async function question(query) {
+  return new Promise((resolve) => {
+    readline.question(query, resolve);
+  });
+}
+
+async function calculateCost(modelName, provider, inputTokens, outputTokens) {
+  const modelInfo = modelsData[provider]?.[modelName];
+  if (!modelInfo) {
+    return 0;
+  }
+  const inputCost = (modelInfo.input / 1000) * inputTokens;
+  const outputCost = (modelInfo.output / 1000) * outputTokens;
   return inputCost + outputCost;
 }
 
-// Get available models
-async function getAvailableModels() {
-  const models = [];
-  const data = JSON.parse(
-    await fsPromises.readFile(path.join(__dirname, "./models.json"), "utf8")
-  );
-
-  Object.entries(data).forEach(([provider, providerModels]) => {
-    Object.keys(providerModels).forEach((model) => {
-      models.push({
-        provider: provider,
-        name: model,
-        displayName: `${model} (${
-          provider === "openai"
-            ? chalk.hex("#74AA9C")("OpenAI")
-            : chalk.hex("#da7756")("Anthropic")
-        })`,
-      });
-    });
-  });
-
-  return models;
+function formatAndOutputCodeBlock(output, codeFormattingFlag) {
+  const codeBlockRegex = /```([\w-]+)?\n([\s\S]*?)\n```/g;
+  let match;
+  let formattedOutput = output;
+  while ((match = codeBlockRegex.exec(output)) !== null) {
+    const lang = match[1] || "";
+    const code = match[2];
+    const formattedCode = chalk.yellow(code);
+    formattedOutput = formattedOutput.replace(match[0], `\`\`\`${lang}\n${formattedCode}\n\`\`\``);
+    codeFormattingFlag = true;
+  }
+  if (!codeFormattingFlag) {
+    console.log(output);
+  } else {
+    console.log(formattedOutput);
+  }
+  return codeFormattingFlag;
 }
 
 program
-  .name("ai")
-  .description("AI code copilot right in your terminal")
-  .version("1.0.0");
-
-program
-  .command("helloworld")
-  .description("Test the installation")
-  .action(() => {
-    console.log(`Hello world :)`);
-    process.exit(0);
-  });
-
-program
+  .version("1.0.0")
+  .description("CLI AI assistant")
+  .option("-m, --model <model>", "Specify the model to use")
+  .option("-p, --provider <provider>", "Specify the provider (openai, anthropic, gemini, groq)")
+  .option("-s, --system-prompt <prompt>", "Specify the system prompt")
+  .option("--raw", "Output raw response without code formatting")
   .command("setup")
-  .description("Configure AI models, system prompt, and API keys")
+  .description("Configure API keys and default settings")
   .action(async () => {
-    const config = loadConfig();
-    const availableModels = await getAvailableModels();
-
-    // console.log("\n=== AI CLI Setup ===\n");
-
-    console.log(chalk.blue("┌" + "─".repeat(30) + "┐"));
-    console.log(chalk.blue("│") + " ".repeat(30) + chalk.blue("│"));
-    console.log(
-      chalk.blue("│") + "         AI CLI Setup         " + chalk.blue("│")
-    );
-    console.log(chalk.blue("│") + " ".repeat(30) + chalk.blue("│"));
-    console.log(chalk.blue("└" + "─".repeat(30) + "┘"));
+    console.log(chalk.bold("\nCLI AI Setup\n"));
 
     // Configure API keys
     console.log(
@@ -143,211 +125,260 @@ program
       config.ANTHROPIC_API_KEY = anthropicKey;
     }
 
-    saveConfig(config);
+    const geminiKey = await question(
+      "Enter" + chalk.hex("#4285F4")(" Gemini ") + "API Key: " // Google Blue
+    );
+    if (geminiKey !== "") {
+      config.GEMINI_API_KEY = geminiKey;
+    }
+
+    const groqKey = await question(
+      "Enter" + chalk.hex("#DB4437")(" Groq ") + "API Key: " // Google Red
+    );
+    if (groqKey !== "") {
+      config.GROQ_API_KEY = groqKey;
+    }
 
     // Configure default model
-    console.log("\nAvailable models:");
-    availableModels.forEach((model, index) => {
-      console.log(`${index + 1}. ${model.displayName}`);
-    });
-
-    const modelChoice = await question(
-      `\nChoose default model (1-${availableModels.length}): `
+    const defaultModel = await question(
+      `Enter default model (leave blank for ${config.defaultModel}): `
     );
-    const selectedModel = availableModels[parseInt(modelChoice) - 1];
-    if (!selectedModel) {
-      console.error("Invalid model choice");
-      process.exit(1);
+    if (defaultModel !== "") {
+      config.defaultModel = defaultModel;
     }
 
-    config.defaultProvider =
-      selectedModel.provider === "openai" ? "openai" : "anthropic";
-    config.defaultModel = selectedModel.name;
+    // Configure default provider
+    const defaultProvider = await question(
+      `Enter default provider (openai, anthropic, gemini, groq, leave blank for ${config.defaultProvider}): `
+    );
+    if (defaultProvider !== "") {
+      config.defaultProvider = defaultProvider.toLowerCase();
+    }
 
-    // Configure system prompt
-    console.log(
-      "\nCurrent system prompt:",
-      chalk.gray('"' + config.systemPrompt + '"')
+    // Configure default system prompt
+    const defaultPrompt = await question(
+      `Enter default system prompt (leave blank for current prompt):\n${config.systemPrompt}\n`
     );
-    const newPrompt = await question(
-      `Enter new system prompt: \n${chalk.gray("(press Enter to keep current)")}\n`
-    );
-    if (newPrompt.trim()) {
-      config.systemPrompt = newPrompt;
+    if (defaultPrompt !== "") {
+      config.systemPrompt = defaultPrompt;
     }
 
     saveConfig(config);
-    console.log(chalk.greenBright("\nConfiguration saved successfully!"));
-    rl.close();
+    readline.close();
+    console.log(chalk.green("\nConfiguration saved successfully!\n"));
   });
 
-function formatAndOutputCodeBlock(output, codeFormattingFlag) {
-  const codeBlockRegex = /```/g;
-
-  const match = codeBlockRegex.exec(output);
-
-  if (match && !codeFormattingFlag) {
-    codeFormattingFlag = true;
-    const beforeMatchStart = output.slice(0, match.index);
-    const afterMatchStart = output.slice(match.index + match[0].length);
-    if (beforeMatchStart) {
-      process.stdout.write(beforeMatchStart);
+program
+  .command("list-models")
+  .description("List available models")
+  .action(async () => {
+    console.log(chalk.bold("\nAvailable Models:\n"));
+    let modelIndex = 0;
+    for (const provider in modelsData) {
+      console.log(chalk.green(`\nProvider: ${provider}\n`));
+      for (const model in modelsData[provider]) {
+        console.log(chalk.yellow(`${modelIndex}. ${model}`));
+        modelIndex++;
+      }
     }
-
-    if (afterMatchStart) {
-      process.stdout.write(chalk.green(afterMatchStart));
-    }
-  } else if (match && codeFormattingFlag) {
-    codeFormattingFlag = false;
-    const beforeMatchEnd = output.slice(0, match.index);
-    const afterMatchEnd = output.slice(match.index + match[0].length);
-    if (beforeMatchEnd) {
-      process.stdout.write(chalk.green(beforeMatchEnd));
-    }
-
-    if (afterMatchEnd) {
-      process.stdout.write(afterMatchEnd);
-    }
-  }
-
-  if (!match) {
-    if (codeFormattingFlag) {
-      process.stdout.write(chalk.green(output));
-    } else {
-      process.stdout.write(output);
-    }
-  }
-
-  return codeFormattingFlag;
-}
+    readline.question(
+      "\nEnter the number of the model to set as default: ",
+      (answer) => {
+        const index = parseInt(answer, 10);
+        if (!isNaN(index) && index >= 0 && index < modelIndex) {
+          let currentIndex = 0;
+          for (const provider in modelsData) {
+            for (const model in modelsData[provider]) {
+              if (currentIndex === index) {
+                config.defaultProvider = provider;
+                config.defaultModel = model;
+                saveConfig(config);
+                console.log(
+                  chalk.green(
+                    `\nDefault model set to ${model} (${provider}) successfully!\n`
+                  )
+                );
+                readline.close();
+                return;
+              }
+              currentIndex++;
+            }
+          }
+        } else {
+          console.log(chalk.red("\nInvalid model number.\n"));
+          readline.close();
+        }
+      }
+    );
+  });
 
 program
   .command("ask <question>")
-  .description("Ask a question to an AI model")
-  .option(
-    "-m, --model <model>",
-    "Specify a model from the list of available models (models.json)"
-  )
+  .description("Ask a question to the AI")
   .action(async (question, options) => {
-    const config = loadConfig();
     const modelName = options.model || config.defaultModel;
-    let modelProvider = config.defaultProvider;
+    const modelProvider = options.provider || config.defaultProvider;
+    const systemPrompt = options.systemPrompt || config.systemPrompt;
+    const rawOutput = options.raw || false;
 
-    // check if the specified model is available + set the provider (only if the user has specified a model)
-    if (options.model) {
-      const availableModels = await getAvailableModels();
-      const availableModelNames = availableModels.map((model) => model.name);
-
-      // check if the specified model is available
-      if (!availableModelNames.find((m) => m === modelName)) {
-        console.error(
-          `Model ${modelName} not found. Please run 'ai setup' to enable it.`
-        );
-        process.exit(1);
-      }
-
-      modelProvider = availableModels.find(
-        (model) => model.name === modelName
-      )?.provider;
+    if (!modelsData[modelProvider]?.[modelName]) {
+      console.error(chalk.red(`Error: Model "${modelName}" not found for provider "${modelProvider}".`));
+      process.exit(1);
     }
 
     // check if the user has set the API keys
     if (!config.ANTHROPIC_API_KEY && modelProvider === "anthropic") {
-      console.error("Please set ANTHROPIC_API_KEY environment variable");
+      console.error(chalk.red("Please set ANTHROPIC_API_KEY using 'cli-ai setup'"));
       process.exit(1);
     }
     if (!config.OPENAI_API_KEY && modelProvider === "openai") {
-      console.error("Please set OPENAI_API_KEY environment variable");
+      console.error(chalk.red("Please set OPENAI_API_KEY using 'cli-ai setup'"));
+      process.exit(1);
+    }
+    if (!config.GEMINI_API_KEY && modelProvider === "gemini") {
+      console.error(chalk.red("Please set GEMINI_API_KEY using 'cli-ai setup'"));
+      process.exit(1);
+    }
+    if (!config.GROQ_API_KEY && modelProvider === "groq") {
+      console.error(chalk.red("Please set GROQ_API_KEY using 'cli-ai setup'"));
       process.exit(1);
     }
 
     try {
       let outputTokens = 0;
       let codeFormattingFlag = false;
+      let output = "";
 
       if (modelProvider === "openai") {
-        const openai = new OpenAI({
-          apiKey: config.OPENAI_API_KEY,
-        });
-
-        const stream = await openai.chat.completions.create({
-          model: config.defaultModelName || "gpt-4.1-nano-2025-04-14",
+        const openai = new OpenAI({ apiKey: config.OPENAI_API_KEY });
+        const completion = await openai.chat.completions.create({
+          model: modelName,
           messages: [
-            { role: "system", content: config.systemPrompt },
+            { role: "system", content: systemPrompt },
             { role: "user", content: question },
           ],
-          stream: true,
         });
-
-        for await (const chunk of stream) {
-          const output = chunk.choices[0]?.delta?.content || "";
-
-          if (output) {
-            codeFormattingFlag = formatAndOutputCodeBlock(
-              output,
-              codeFormattingFlag
-            );
-            outputTokens++;
-          }
-        }
+        output = completion.choices[0].message.content;
+        outputTokens = completion.usage?.completion_tokens || 0;
       } else if (modelProvider === "anthropic") {
-        const anthropic = new Anthropic({
-          apiKey: config.ANTHROPIC_API_KEY,
-        });
-
-        const stream = await anthropic.messages.create({
-          model: config.defaultModelName || "claude-3-haiku-20240307",
-          max_tokens: 1024,
-          system: config.systemPrompt,
+        const anthropic = new Anthropic({ apiKey: config.ANTHROPIC_API_KEY });
+        const response = await anthropic.messages.create({
+          model: modelName,
+          max_tokens: 2000, // Adjust as needed
           messages: [{ role: "user", content: question }],
-          stream: true,
         });
-
-        for await (const chunk of stream) {
-          if (chunk.type === "content_block_delta") {
-            const output = chunk.delta.text;
-
-            if (output) {
-              codeFormattingFlag = formatAndOutputCodeBlock(
-                output,
-                codeFormattingFlag
-              );
-
-              outputTokens++;
-            }
-          }
-        }
+        output = response.content[0].text;
+        outputTokens = response.usage?.completion_tokens || 0;
+      } else if (modelProvider === "gemini") {
+        const genAI = new GoogleGenerativeAI(config.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent([systemPrompt, question]);
+        const response = await result.response;
+        output = response.text();
+        outputTokens = response.usage?.totalTokens || output.split(/\s+/).length;
+      } else if (modelProvider === "groq") {
+        const groq = new Groq({ apiKey: config.GROQ_API_KEY });
+        const chatCompletion = await groq.chat.completions.create({
+          model: modelName,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: question },
+          ],
+        });
+        output = chatCompletion.choices[0].message.content;
+        outputTokens = chatCompletion.usage?.completion_tokens || output.split(/\s+/).length || 0;
       } else {
         console.error(
-          "Invalid model provider. Please use 'anthropic' or 'openai'"
+          chalk.red(`Error: Invalid provider "${modelProvider}". Supported providers are openai, anthropic, gemini, groq.`)
         );
         process.exit(1);
       }
 
-      // calculating and outputting the costs
-      const inputTokens = Math.ceil(
-        (question.length + config.systemPrompt.length) / 4
-      );
+      if (output) {
+        if (!rawOutput) {
+          codeFormattingFlag = formatAndOutputCodeBlock(output, codeFormattingFlag);
+        } else {
+          console.log(output);
+        }
 
-      const cost = await calculateCost(
-        modelName,
-        modelProvider,
-        inputTokens,
-        outputTokens
-      );
+        const inputTokens = Math.ceil((question.length + systemPrompt.length) / 4); // Approximate token count
+        const cost = await calculateCost(
+          modelName,
+          modelProvider,
+          inputTokens,
+          outputTokens
+        );
 
-      console.log(
-        chalk.gray(
-          `\n\nModel used: ${modelName}\nCost: $${cost.toFixed(
-            6
-          )} (Input: ${inputTokens} tokens, Output: ${outputTokens} tokens)`
-        )
-      );
+        console.log(
+          chalk.gray(
+            `\n\nModel used: ${modelName} (${modelProvider})\nCost: $${cost.toFixed(
+              6
+            )} (Input: ~${inputTokens} tokens, Output: ~${outputTokens} tokens)`
+          )
+        );
+      }
+
       process.exit(0);
     } catch (error) {
-      console.error("Error:", error.message);
+      console.error(chalk.red("Error:", error.message));
       process.exit(1);
     }
   });
+  result = await model.generateContent([systemPrompt, prompt]);
+          response = await result.response;
+          output = response.text();
+          outputTokens = response.usage?.totalTokens || output.split(/\s+/).length;
+        } else if (modelProvider === "groq") {
+          const groq = new Groq({ apiKey: config.GROQ_API_KEY });
+          const chatCompletion = await groq.chat.completions.create({
+            model: modelName,
+            messages: [
+              { role: "system", content: prompt },
+              { role: "user", content: prompt },
+            ],
+          });
+          output = chatCompletion.choices[0].message.content;
+          outputTokens = chatCompletion.usage?.completion_tokens || output.split(/\s+/).length || 0;
+        } else {
+          console.error(
+            chalk.red(`Error: Invalid provider "${modelProvider}". Supported providers are openai, anthropic, gemini, groq.`)
+          );
+          process.exit(1);
+        }
 
-program.parse();
+        if (output) {
+          if (!rawOutput) {
+            codeFormattingFlag = formatAndOutputCodeBlock(output, codeFormattingFlag);
+          } else {
+            console.log(output);
+          }
+
+          const inputTokens = Math.ceil(prompt.length / 4);
+          const cost = await calculateCost(
+            modelName,
+            modelProvider,
+            inputTokens,
+            outputTokens
+          );
+
+          console.log(
+            chalk.gray(
+              `\n\nModel used: ${modelName} (${modelProvider})\nCost: $${cost.toFixed(
+                6
+              )} (Input: ~${inputTokens} tokens, Output: ~${outputTokens} tokens)`
+            )
+          );
+        }
+
+        process.exit(0);
+      } catch (error) {
+        console.error(chalk.red("Error:", error.message));
+        process.exit(1);
+      }
+    });
+
+  program.parse(process.argv);
+
+  if (process.argv.length === 2) {
+    program.outputHelp();
+  }
