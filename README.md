@@ -114,19 +114,15 @@ Run `ai setup` to configure your keys and default preferences.
     -   llama-3.1-8b-instant
     -   compound-beta
     -   compound-beta-mini
--   OpenRouter
-    -   agentica/deepcoder-14b-preview (free)
-    -   meta/llama-4-scout (free)
-    -   olympiccoder/olympiccoder-32b (free)
-    -   dolphin/dolphin3.0-r1-mistral-24b (free)
-    -   qwen/qwen2.5-coder-32b-instruct (free)
-    -   deepseek/deepseek-r1-0528-qwen3-8b (free)
-    -   meta/llama-4-maverick (free)
-    -   thudm/glm-z1-32b (free)
-    -   anthropic/claude-3-5-sonnet
-    -   anthropic/claude-3-opus
-    -   google/gemini-1.5-pro
-    -   google/gemini-1.5-flash
+-   OpenRouter (Free Models)
+    -   agentica/deepcoder-14b-preview
+    -   meta/llama-4-scout
+    -   olympiccoder/olympiccoder-32b
+    -   dolphin/dolphin3.0-r1-mistral-24b
+    -   qwen/qwen2.5-coder-32b-instruct
+    -   deepseek/deepseek-r1-0528-qwen3-8b
+    -   meta/llama-4-maverick
+    -   thudm/glm-z1-32b
 
 ## License
 

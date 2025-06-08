@@ -219,22 +219,6 @@
     "thudm/glm-z1-32b": {
       "input": 0.0,
       "output": 0.0
-    },
-    "anthropic/claude-3-5-sonnet": {
-      "input": 3.0,
-      "output": 15.0
-    },
-    "anthropic/claude-3-opus": {
-      "input": 15.0,
-      "output": 75.0
-    },
-    "google/gemini-1.5-pro": {
-      "input": 1.6,
-      "output": 4.8
-    },
-    "google/gemini-1.5-flash": {
-      "input": 0.3,
-      "output": 0.9
     }
   }
 }
