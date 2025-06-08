@@ -4,13 +4,19 @@ Welcome to cli-ai-plus, an enhanced open-source CLI application that brings the 
 
 ## Installation
 
-1.  Navigate to the project directory:
+1.  Clone the repository:
+
+    ```bash
+    git clone https://github.com/mizzzantrop/cli-ai-plus.git
+    ```
+
+2.  Navigate to the project directory:
 
     ```bash
     cd cli-ai-plus
     ```
 
-2.  Install globally:
+3.  Install globally:
 
     ```bash
     npm install -g .
@@ -18,7 +24,7 @@ Welcome to cli-ai-plus, an enhanced open-source CLI application that brings the 
 
     >   Note: If you get a permission error, use: `sudo npm install -g .`
 
-3.  Test the installation:
+4.  Test the installation:
 
     ```bash
     ai ask "Hello, how can you help me today?"
