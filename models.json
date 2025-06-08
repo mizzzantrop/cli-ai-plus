@@ -56,14 +56,6 @@
     }
   },
   "gemini": {
-    "gemini-1.5-pro-0531": {
-      "input": 1.6,
-      "output": 4.8
-    },
-    "gemini-1.5-flash-0531": {
-      "input": 0.3,
-      "output": 0.9
-    },
     "gemini-2.5-pro": {
       "input": 2.0,
       "output": 6.0
@@ -71,42 +63,6 @@
     "gemini-2.5-flash": {
       "input": 0.5,
       "output": 1.5
-    },
-    "gemini-1.0-ultra-0105": {
-      "input": 8,
-      "output": 24
-    },
-    "gemini-1.0-pro-0104": {
-      "input": 0.8,
-      "output": 2.4
-    },
-    "gemini-1.0-pro-latest": {
-      "input": 0.8,
-      "output": 2.4
-    },
-    "gemini-1.0-pro-002": {
-      "input": 0.8,
-      "output": 2.4
-    },
-    "gemini-1.0-pro-001": {
-      "input": 0.8,
-      "output": 2.4
-    },
-    "gemini-1.0-flash-0104": {
-      "input": 0.16,
-      "output": 0.48
-    },
-    "gemini-1.0-flash-latest": {
-      "input": 0.16,
-      "output": 0.48
-    },
-    "gemini-1.0-flash-002": {
-      "input": 0.16,
-      "output": 0.48
-    },
-    "gemini-1.0-flash-001": {
-      "input": 0.16,
-      "output": 0.48
     },
     "gemini-pro": {
       "input": 0.8,
@@ -127,30 +83,6 @@
     "gemini-advanced": {
       "input": 8,
       "output": 24
-    },
-    "gemini-advanced-vision": {
-      "input": 8,
-      "output": 24
-    },
-    "gemini-1.0-medium-001": {
-      "input": 0.4,
-      "output": 1.2
-    },
-    "gemini-1.0-small-006": {
-      "input": 0.04,
-      "output": 0.12
-    },
-    "gemini-1.0-small-005": {
-      "input": 0.04,
-      "output": 0.12
-    },
-    "gemini-1.0-small-004": {
-      "input": 0.04,
-      "output": 0.12
-    },
-    "gemini-1.0-nano-004": {
-      "input": 0.02,
-      "output": 0.06
     }
   },
   "groq": {
