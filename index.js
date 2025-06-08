@@ -7,16 +7,19 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const Groq = require("groq-sdk");
 const fs = require("fs");
 const fsPromises = require("fs").promises;
-const readline = require("readline").createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+const readline = require("readline");
 const path = require("path");
 const chalk = require("chalk");
 const fetch = require("node-fetch");
 
 const CONFIG_FILE = path.join(__dirname, "config.json");
 const MODELS_FILE = path.join(__dirname, "models.json");
+
+// Create readline interface
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
 
 let config = loadConfig();
 const modelsData = loadModels();
@@ -55,7 +58,7 @@ function loadModels() {
 
 async function question(query) {
   return new Promise((resolve) => {
-    readline.question(query, resolve);
+    rl.question(query, resolve);
   });
 }
 
@@ -94,7 +97,9 @@ program
   .option("-m, --model <model>", "Specify the model to use")
   .option("-p, --provider <provider>", "Specify the provider (openai, anthropic, gemini, groq, openrouter)")
   .option("-s, --system-prompt <prompt>", "Specify the system prompt")
-  .option("--raw", "Output raw response without code formatting")
+  .option("--raw", "Output raw response without code formatting");
+
+program
   .command("setup")
   .description("Configure API keys and default settings")
   .action(async () => {
@@ -173,7 +178,7 @@ program
     }
 
     saveConfig(config);
-    readline.close();
+    rl.close();
     console.log(chalk.green("\nConfiguration saved successfully!\n"));
   });
 
@@ -194,32 +199,29 @@ program
       }
     }
     
-    readline.question(
-      "\nEnter the number of the model to set as default (or 'q' to quit): ",
-      (answer) => {
-        if (answer.toLowerCase() === 'q') {
-          console.log(chalk.blue("\nExiting without changes.\n"));
-          readline.close();
-          return;
-        }
-        
-        const index = parseInt(answer, 10);
-        if (!isNaN(index) && index >= 0 && index < modelMap.length) {
-          const { provider, model } = modelMap[index];
-          config.defaultProvider = provider;
-          config.defaultModel = model;
-          saveConfig(config);
-          console.log(
-            chalk.green(
-              `\nDefault model set to ${model} (${provider}) successfully!\n`
-            )
-          );
-        } else {
-          console.log(chalk.red("\nInvalid model number.\n"));
-        }
-        readline.close();
-      }
-    );
+    const answer = await question("\nEnter the number of the model to set as default (or 'q' to quit): ");
+    
+    if (answer.toLowerCase() === 'q') {
+      console.log(chalk.blue("\nExiting without changes.\n"));
+      rl.close();
+      return;
+    }
+    
+    const index = parseInt(answer, 10);
+    if (!isNaN(index) && index >= 0 && index < modelMap.length) {
+      const { provider, model } = modelMap[index];
+      config.defaultProvider = provider;
+      config.defaultModel = model;
+      saveConfig(config);
+      console.log(
+        chalk.green(
+          `\nDefault model set to ${model} (${provider}) successfully!\n`
+        )
+      );
+    } else {
+      console.log(chalk.red("\nInvalid model number.\n"));
+    }
+    rl.close();
   });
 
 program
@@ -295,7 +297,7 @@ program
           maxOutputTokens: 2048,
         };
         
-        // Создаем чат с системным промптом
+        // Create chat with system prompt
         const chat = model.startChat({
           generationConfig,
           systemInstruction: systemPrompt,
@@ -385,11 +387,6 @@ program
   .command("analyze <file_path>")
   .description("Analyze the code in the specified file")
   .action(async (filePath, options) => {
-    const modelName = options.model || config.defaultModel;
-    const modelProvider = options.provider || config.defaultProvider;
-    const systemPrompt = options.systemPrompt || config.systemPrompt;
-    const rawOutput = options.raw || false;
-
     try {
       // Read the file content
       const fileContent = await fsPromises.readFile(filePath, "utf8");
@@ -400,8 +397,9 @@ program
       const analysisPrompt = `Please analyze the following ${fileExtension} code from file "${fileName}" and identify any syntax errors, logical bugs, and suggest best practices or improvements:\n\n${fileContent}`;
 
       // Use the ask functionality with the analysis prompt
-      const askOptions = { ...options, parent: { ...options } };
-      await program.commands.find(cmd => cmd.name() === "ask").action(analysisPrompt, askOptions);
+      const askCommand = program.commands.find(cmd => cmd.name() === "ask");
+      const askOptions = { ...options, parent: program };
+      await askCommand.action(analysisPrompt, askOptions);
     } catch (error) {
       console.error(chalk.red("Error:", error.message));
       process.exit(1);
