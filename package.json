@@ -4,9 +4,7 @@
   "description": "An enhanced CLI tool for interacting with AI models (OpenAI, Anthropic, Gemini, Groq, OpenRouter) and analyzing code.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint .",
-    "format": "prettier --write ."
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
     "ai": "./index.js"
@@ -36,10 +34,6 @@
     "@google/generative-ai": "^0.24.1",
     "groq-sdk": "^0.23.0",
     "node-fetch": "^2.7.0"
-  },
-  "devDependencies": {
-    "eslint": "^9.0.0",
-    "prettier": "^3.5.3"
   },
   "files": [
     "index.js",
