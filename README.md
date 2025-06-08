@@ -21,7 +21,7 @@ Welcome to cli-ai-plus, an enhanced open-source CLI application that brings the 
 3.  Test the installation:
 
     ```bash
-    ai helloworld
+    ai ask "Hello, how can you help me today?"
     ```
 
 ## Usage
@@ -57,6 +57,7 @@ Get API keys from the following providers:
 -   [Anthropic](https://console.anthropic.com/settings/keys)
 -   [Google Cloud AI Platform (for Gemini)](https://console.cloud.google.com/apis/credentials)
 -   [Groq](https://console.groq.com/keys)
+-   [OpenRouter](https://openrouter.ai/keys)
 
 Run `ai setup` to configure your keys and default preferences.
 
@@ -77,6 +78,9 @@ Run `ai setup` to configure your keys and default preferences.
     -   claude-3-5-sonnet-20241022
     -   claude-3-haiku-20240307
 -   Gemini
+    -   gemini-2.5-pro
+    -   gemini-2.5-flash
+    -   gemini-1.5-pro-0531
     -   gemini-pro
 -   Groq
     -   gemma2-9b-it
@@ -84,11 +88,18 @@ Run `ai setup` to configure your keys and default preferences.
     -   llama-3.1-8b-instant
     -   compound-beta
     -   compound-beta-mini
+-   OpenRouter (Free Models)
+    -   agentica/deepcoder-14b-preview
+    -   meta/llama-4-scout
+    -   olympiccoder/olympiccoder-32b
+    -   dolphin/dolphin3.0-r1-mistral-24b
+    -   qwen/qwen2.5-coder-32b-instruct
+    -   deepseek/deepseek-r1-0528-qwen3-8b
+    -   meta/llama-4-maverick
+    -   thudm/glm-z1-32b
 
 ## License
 
 MIT
 
----
-
-Enjoy using cli-ai-plus! 😊
+Enjoy using cli-ai! 😊

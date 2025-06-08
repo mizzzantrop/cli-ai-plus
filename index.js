@@ -26,13 +26,14 @@ function loadConfig() {
     return JSON.parse(data);
   } catch (error) {
     return {
-      defaultModel: "gemini-pro",
-      systemPrompt: "You are a helpful AI assistant specializing in analyzing and improving code. Identify syntax errors, logical bugs, and suggest best practices.",
+      defaultModel: "gemini-2.5-pro", // Updated to Gemini 2.5 model
+      systemPrompt: "I'm a versatile AI assistant focused on providing accurate, helpful information. I can analyze code, explain concepts, solve problems, and assist with various tasks. I prioritize clarity, relevance, and ethical considerations in my responses.", // Better system prompt
       OPENAI_API_KEY: "",
       ANTHROPIC_API_KEY: "",
       GEMINI_API_KEY: "",
       GROQ_API_KEY: "",
-      defaultProvider: "gemini",
+      OPENROUTER_API_KEY: "", // Added OpenRouter API key
+      defaultProvider: "gemini", // Default provider set to Gemini
     };
   }
 }
@@ -90,13 +91,13 @@ program
   .version("1.0.0")
   .description("CLI AI assistant")
   .option("-m, --model <model>", "Specify the model to use")
-  .option("-p, --provider <provider>", "Specify the provider (openai, anthropic, gemini, groq)")
+  .option("-p, --provider <provider>", "Specify the provider (openai, anthropic, gemini, groq, openrouter)")
   .option("-s, --system-prompt <prompt>", "Specify the system prompt")
   .option("--raw", "Output raw response without code formatting")
   .command("setup")
   .description("Configure API keys and default settings")
   .action(async () => {
-    console.log(chalk.bold("\nCLI AI Setup\n"));
+    console.log(chalk.bold("\nCLI AI Plus Setup\n"));
 
     // Configure API keys
     console.log(
@@ -139,6 +140,14 @@ program
       config.GROQ_API_KEY = groqKey;
     }
 
+    // Add OpenRouter API key configuration
+    const openrouterKey = await question(
+      "Enter" + chalk.hex("#FF6B6B")(" OpenRouter ") + "API Key: " 
+    );
+    if (openrouterKey !== "") {
+      config.OPENROUTER_API_KEY = openrouterKey;
+    }
+
     // Configure default model
     const defaultModel = await question(
       `Enter default model (leave blank for ${config.defaultModel}): `
@@ -149,7 +158,7 @@ program
 
     // Configure default provider
     const defaultProvider = await question(
-      `Enter default provider (openai, anthropic, gemini, groq, leave blank for ${config.defaultProvider}): `
+      `Enter default provider (openai, anthropic, gemini, groq, openrouter, leave blank for ${config.defaultProvider}): `
     );
     if (defaultProvider !== "") {
       config.defaultProvider = defaultProvider.toLowerCase();
@@ -170,44 +179,45 @@ program
 
 program
   .command("list-models")
-  .description("List available models")
+  .description("List available models and select one by number")
   .action(async () => {
     console.log(chalk.bold("\nAvailable Models:\n"));
     let modelIndex = 0;
+    const modelMap = [];
+    
     for (const provider in modelsData) {
       console.log(chalk.green(`\nProvider: ${provider}\n`));
       for (const model in modelsData[provider]) {
         console.log(chalk.yellow(`${modelIndex}. ${model}`));
+        modelMap.push({ provider, model });
         modelIndex++;
       }
     }
+    
     readline.question(
-      "\nEnter the number of the model to set as default: ",
+      "\nEnter the number of the model to set as default (or 'q' to quit): ",
       (answer) => {
+        if (answer.toLowerCase() === 'q') {
+          console.log(chalk.blue("\nExiting without changes.\n"));
+          readline.close();
+          return;
+        }
+        
         const index = parseInt(answer, 10);
-        if (!isNaN(index) && index >= 0 && index < modelIndex) {
-          let currentIndex = 0;
-          for (const provider in modelsData) {
-            for (const model in modelsData[provider]) {
-              if (currentIndex === index) {
-                config.defaultProvider = provider;
-                config.defaultModel = model;
-                saveConfig(config);
-                console.log(
-                  chalk.green(
-                    `\nDefault model set to ${model} (${provider}) successfully!\n`
-                  )
-                );
-                readline.close();
-                return;
-              }
-              currentIndex++;
-            }
-          }
+        if (!isNaN(index) && index >= 0 && index < modelMap.length) {
+          const { provider, model } = modelMap[index];
+          config.defaultProvider = provider;
+          config.defaultModel = model;
+          saveConfig(config);
+          console.log(
+            chalk.green(
+              `\nDefault model set to ${model} (${provider}) successfully!\n`
+            )
+          );
         } else {
           console.log(chalk.red("\nInvalid model number.\n"));
-          readline.close();
         }
+        readline.close();
       }
     );
   });
@@ -221,26 +231,30 @@ program
     const systemPrompt = options.systemPrompt || config.systemPrompt;
     const rawOutput = options.raw || false;
 
-    if (!modelsData[modelProvider]?.[modelName]) {
+    if (!modelsData[modelProvider]?.[modelName] && modelProvider !== "openrouter") {
       console.error(chalk.red(`Error: Model "${modelName}" not found for provider "${modelProvider}".`));
       process.exit(1);
     }
 
     // check if the user has set the API keys
     if (!config.ANTHROPIC_API_KEY && modelProvider === "anthropic") {
-      console.error(chalk.red("Please set ANTHROPIC_API_KEY using 'cli-ai setup'"));
+      console.error(chalk.red("Please set ANTHROPIC_API_KEY using 'ai setup'"));
       process.exit(1);
     }
     if (!config.OPENAI_API_KEY && modelProvider === "openai") {
-      console.error(chalk.red("Please set OPENAI_API_KEY using 'cli-ai setup'"));
+      console.error(chalk.red("Please set OPENAI_API_KEY using 'ai setup'"));
       process.exit(1);
     }
     if (!config.GEMINI_API_KEY && modelProvider === "gemini") {
-      console.error(chalk.red("Please set GEMINI_API_KEY using 'cli-ai setup'"));
+      console.error(chalk.red("Please set GEMINI_API_KEY using 'ai setup'"));
       process.exit(1);
     }
     if (!config.GROQ_API_KEY && modelProvider === "groq") {
-      console.error(chalk.red("Please set GROQ_API_KEY using 'cli-ai setup'"));
+      console.error(chalk.red("Please set GROQ_API_KEY using 'ai setup'"));
+      process.exit(1);
+    }
+    if (!config.OPENROUTER_API_KEY && modelProvider === "openrouter") {
+      console.error(chalk.red("Please set OPENROUTER_API_KEY using 'ai setup'"));
       process.exit(1);
     }
 
@@ -265,17 +279,40 @@ program
         const response = await anthropic.messages.create({
           model: modelName,
           max_tokens: 2000, // Adjust as needed
+          system: systemPrompt,
           messages: [{ role: "user", content: question }],
         });
         output = response.content[0].text;
-        outputTokens = response.usage?.completion_tokens || 0;
+        outputTokens = response.usage?.output_tokens || 0;
       } else if (modelProvider === "gemini") {
         const genAI = new GoogleGenerativeAI(config.GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent([systemPrompt, question]);
+        
+        const generationConfig = {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 2048,
+        };
+        
+        const chat = model.startChat({
+          generationConfig,
+          history: [
+            {
+              role: "user",
+              parts: [{ text: "Hello, I'd like your help with some questions." }],
+            },
+            {
+              role: "model",
+              parts: [{ text: "I'll do my best to help you. What would you like to know?" }],
+            },
+          ],
+        });
+        
+        const result = await chat.sendMessage(question);
         const response = await result.response;
         output = response.text();
-        outputTokens = response.usage?.totalTokens || output.split(/\s+/).length;
+        outputTokens = output.split(/\s+/).length; // Approximate token count
       } else if (modelProvider === "groq") {
         const groq = new Groq({ apiKey: config.GROQ_API_KEY });
         const chatCompletion = await groq.chat.completions.create({
@@ -287,9 +324,33 @@ program
         });
         output = chatCompletion.choices[0].message.content;
         outputTokens = chatCompletion.usage?.completion_tokens || output.split(/\s+/).length || 0;
+      } else if (modelProvider === "openrouter") {
+        // OpenRouter implementation
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${config.OPENROUTER_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: modelName,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: question },
+            ],
+          }),
+        });
+        
+        const data = await response.json();
+        if (data.error) {
+          throw new Error(`OpenRouter API error: ${data.error.message}`);
+        }
+        
+        output = data.choices[0].message.content;
+        outputTokens = data.usage?.completion_tokens || output.split(/\s+/).length || 0;
       } else {
         console.error(
-          chalk.red(`Error: Invalid provider "${modelProvider}". Supported providers are openai, anthropic, gemini, groq.`)
+          chalk.red(`Error: Invalid provider "${modelProvider}". Supported providers are openai, anthropic, gemini, groq, openrouter.`)
         );
         process.exit(1);
       }
@@ -324,61 +385,37 @@ program
       process.exit(1);
     }
   });
-  result = await model.generateContent([systemPrompt, prompt]);
-          response = await result.response;
-          output = response.text();
-          outputTokens = response.usage?.totalTokens || output.split(/\s+/).length;
-        } else if (modelProvider === "groq") {
-          const groq = new Groq({ apiKey: config.GROQ_API_KEY });
-          const chatCompletion = await groq.chat.completions.create({
-            model: modelName,
-            messages: [
-              { role: "system", content: prompt },
-              { role: "user", content: prompt },
-            ],
-          });
-          output = chatCompletion.choices[0].message.content;
-          outputTokens = chatCompletion.usage?.completion_tokens || output.split(/\s+/).length || 0;
-        } else {
-          console.error(
-            chalk.red(`Error: Invalid provider "${modelProvider}". Supported providers are openai, anthropic, gemini, groq.`)
-          );
-          process.exit(1);
-        }
 
-        if (output) {
-          if (!rawOutput) {
-            codeFormattingFlag = formatAndOutputCodeBlock(output, codeFormattingFlag);
-          } else {
-            console.log(output);
-          }
+// Add analyze command
+program
+  .command("analyze <file_path>")
+  .description("Analyze the code in the specified file")
+  .action(async (filePath, options) => {
+    const modelName = options.model || config.defaultModel;
+    const modelProvider = options.provider || config.defaultProvider;
+    const systemPrompt = options.systemPrompt || config.systemPrompt;
+    const rawOutput = options.raw || false;
 
-          const inputTokens = Math.ceil(prompt.length / 4);
-          const cost = await calculateCost(
-            modelName,
-            modelProvider,
-            inputTokens,
-            outputTokens
-          );
+    try {
+      // Read the file content
+      const fileContent = await fsPromises.readFile(filePath, "utf8");
+      const fileName = path.basename(filePath);
+      const fileExtension = path.extname(filePath).substring(1);
 
-          console.log(
-            chalk.gray(
-              `\n\nModel used: ${modelName} (${modelProvider})\nCost: $${cost.toFixed(
-                6
-              )} (Input: ~${inputTokens} tokens, Output: ~${outputTokens} tokens)`
-            )
-          );
-        }
+      // Create a prompt for code analysis
+      const analysisPrompt = `Please analyze the following ${fileExtension} code from file "${fileName}" and identify any syntax errors, logical bugs, and suggest best practices or improvements:\n\n${fileContent}`;
 
-        process.exit(0);
-      } catch (error) {
-        console.error(chalk.red("Error:", error.message));
-        process.exit(1);
-      }
-    });
+      // Use the ask functionality with the analysis prompt
+      const askOptions = { ...options, parent: { ...options } };
+      await program.commands.find(cmd => cmd.name() === "ask").action(analysisPrompt, askOptions);
+    } catch (error) {
+      console.error(chalk.red("Error:", error.message));
+      process.exit(1);
+    }
+  });
 
-  program.parse(process.argv);
+program.parse(process.argv);
 
-  if (process.argv.length === 2) {
-    program.outputHelp();
-  }
+if (process.argv.length === 2) {
+  program.outputHelp();
+}

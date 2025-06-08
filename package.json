@@ -1,7 +1,7 @@
 {
-  "name": "cli-ai",
+  "name": "cli-ai-plus",
   "version": "1.0.0",
-  "description": "An enhanced CLI tool (cli-ai) for interacting with AI models (OpenAI, Anthropic, Gemini, Groq) and analyzing code.",
+  "description": "An enhanced CLI tool for interacting with AI models (OpenAI, Anthropic, Gemini, Groq, OpenRouter) and analyzing code.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -19,6 +19,7 @@
     "anthropic",
     "gemini",
     "groq",
+    "openrouter",
     "chatgpt",
     "claude",
     "command-line"
@@ -35,7 +36,8 @@
     "openai": "^4.93.0",
     "@google/generative-ai": "0.24.1",
     "groq-sdk": "0.23.0",
-    "lru-cache": "^7.19.1"
+    "lru-cache": "^7.19.1",
+    "node-fetch": "^3.3.2"
   },
   "devDependencies": {
     "eslint": "^8.57.1",
@@ -54,10 +56,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/cli-ai.git"
+    "url": "git+https://github.com/yourusername/cli-ai-plus.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/cli-ai/issues"
+    "url": "https://github.com/yourusername/cli-ai-plus/issues"
   },
-  "homepage": "https://github.com/yourusername/cli-ai#readme"
+  "homepage": "https://github.com/yourusername/cli-ai-plus#readme",
+  "type": "commonjs"
 }
