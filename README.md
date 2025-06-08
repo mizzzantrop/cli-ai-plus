@@ -16,19 +16,37 @@ Welcome to cli-ai-plus, an enhanced open-source CLI application that brings the 
     cd cli-ai-plus
     ```
 
-3.  Install globally:
+3.  Install dependencies and install globally:
 
     ```bash
-    npm install -g .
+    npm install && npm install -g .
     ```
 
     >   Note: If you get a permission error, use: `sudo npm install -g .`
 
-4.  Test the installation:
+4.  Configure your API keys:
+
+    ```bash
+    ai setup
+    ```
+
+    This will guide you through setting up API keys for the AI providers you want to use.
+
+5.  Test the installation:
 
     ```bash
     ai ask "Hello, how can you help me today?"
     ```
+
+## API Keys
+
+You'll need at least one API key to use cli-ai-plus. Get API keys from any of these providers:
+
+-   [OpenAI](https://platform.openai.com/api-keys)
+-   [Anthropic](https://console.anthropic.com/settings/keys)
+-   [Google Cloud AI Platform (for Gemini)](https://console.cloud.google.com/apis/credentials)
+-   [Groq](https://console.groq.com/keys)
+-   [OpenRouter](https://openrouter.ai/keys) (provides access to free models)
 
 ## Usage
 
@@ -40,6 +58,8 @@ ai --help
 
 ### Available Commands
 
+-   `ai setup` - Configure API keys and default settings for various AI providers (OpenAI, Anthropic, Gemini, Groq, OpenRouter) and the default model.
+
 -   `ai ask <question>` - Ask a question to the AI
     -   `ai --model <model> ask <question>`: Specify the model to use for the query.
     -   `ai -m <model> ask <question>`: Short version to specify the model.
@@ -48,24 +68,30 @@ ai --help
     -   `ai --system-prompt <prompt> ask <question>`: Specify a custom system prompt for the current query.
     -   `ai -s <prompt> ask <question>`: Short version to specify the system prompt.
     -   `ai --raw ask <question>`: Output the raw response from the AI without code formatting.
+
 -   `ai analyze <file_path>` - Analyze the code in the specified file. The AI will attempt to identify syntax errors, logical bugs, and suggest best practices. You can also use the `--model`, `--provider`, `--system-prompt`, and `--raw` options with this command.
--   `ai setup` - Configure API keys and default settings for various AI providers (OpenAI, Anthropic, Gemini, Groq, OpenRouter) and the default model.
+
 -   `ai list-models` - List the available AI models supported by the CLI for each provider. You can also use this command to set a new default model interactively.
+
 -   `ai help [command]` - Display help information for a specific command.
 
-## Configuration
+## Quick Start Examples
 
-Before using the CLI, you'll need to:
+After setting up your API keys, try these commands:
 
-Get API keys from the following providers:
+```bash
+# Ask a question using the default model
+ai ask "What are the best practices for writing clean code?"
 
--   [OpenAI](https://platform.openai.com/api-keys)
--   [Anthropic](https://console.anthropic.com/settings/keys)
--   [Google Cloud AI Platform (for Gemini)](https://console.cloud.google.com/apis/credentials)
--   [Groq](https://console.groq.com/keys)
--   [OpenRouter](https://openrouter.ai/keys)
+# Analyze a code file
+ai analyze path/to/your/file.js
 
-Run `ai setup` to configure your keys and default preferences.
+# Use a specific model and provider
+ai -p openai -m gpt-4o-2024-08-06 ask "Explain how promises work in JavaScript"
+
+# List available models and set a new default
+ai list-models
+```
 
 ## Models Supported
 

@@ -13,6 +13,7 @@ const readline = require("readline").createInterface({
 });
 const path = require("path");
 const chalk = require("chalk");
+const fetch = require("node-fetch");
 
 const CONFIG_FILE = path.join(__dirname, "config.json");
 const MODELS_FILE = path.join(__dirname, "models.json");
@@ -26,14 +27,14 @@ function loadConfig() {
     return JSON.parse(data);
   } catch (error) {
     return {
-      defaultModel: "gemini-2.5-pro", // Updated to Gemini 2.5 model
-      systemPrompt: "I'm a versatile AI assistant focused on providing accurate, helpful information. I can analyze code, explain concepts, solve problems, and assist with various tasks. I prioritize clarity, relevance, and ethical considerations in my responses.", // Better system prompt
+      defaultModel: "gemini-2.5-pro",
+      systemPrompt: "I'm a versatile AI assistant focused on providing accurate, helpful information. I can analyze code, explain concepts, solve problems, and assist with various tasks. I prioritize clarity, relevance, and ethical considerations in my responses.",
       OPENAI_API_KEY: "",
       ANTHROPIC_API_KEY: "",
       GEMINI_API_KEY: "",
       GROQ_API_KEY: "",
-      OPENROUTER_API_KEY: "", // Added OpenRouter API key
-      defaultProvider: "gemini", // Default provider set to Gemini
+      OPENROUTER_API_KEY: "",
+      defaultProvider: "gemini",
     };
   }
 }
@@ -127,20 +128,19 @@ program
     }
 
     const geminiKey = await question(
-      "Enter" + chalk.hex("#4285F4")(" Gemini ") + "API Key: " // Google Blue
+      "Enter" + chalk.hex("#4285F4")(" Gemini ") + "API Key: "
     );
     if (geminiKey !== "") {
       config.GEMINI_API_KEY = geminiKey;
     }
 
     const groqKey = await question(
-      "Enter" + chalk.hex("#DB4437")(" Groq ") + "API Key: " // Google Red
+      "Enter" + chalk.hex("#DB4437")(" Groq ") + "API Key: "
     );
     if (groqKey !== "") {
       config.GROQ_API_KEY = groqKey;
     }
 
-    // Add OpenRouter API key configuration
     const openrouterKey = await question(
       "Enter" + chalk.hex("#FF6B6B")(" OpenRouter ") + "API Key: " 
     );
@@ -278,7 +278,7 @@ program
         const anthropic = new Anthropic({ apiKey: config.ANTHROPIC_API_KEY });
         const response = await anthropic.messages.create({
           model: modelName,
-          max_tokens: 2000, // Adjust as needed
+          max_tokens: 2000,
           system: systemPrompt,
           messages: [{ role: "user", content: question }],
         });
@@ -295,18 +295,10 @@ program
           maxOutputTokens: 2048,
         };
         
+        // Создаем чат с системным промптом
         const chat = model.startChat({
           generationConfig,
-          history: [
-            {
-              role: "user",
-              parts: [{ text: "Hello, I'd like your help with some questions." }],
-            },
-            {
-              role: "model",
-              parts: [{ text: "I'll do my best to help you. What would you like to know?" }],
-            },
-          ],
+          systemInstruction: systemPrompt,
         });
         
         const result = await chat.sendMessage(question);
@@ -331,6 +323,8 @@ program
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${config.OPENROUTER_API_KEY}`,
+            "HTTP-Referer": "https://github.com/mizzzantrop/cli-ai-plus",
+            "X-Title": "CLI AI Plus"
           },
           body: JSON.stringify({
             model: modelName,
