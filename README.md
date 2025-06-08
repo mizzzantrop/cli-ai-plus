@@ -37,13 +37,13 @@ ai --help
 -   `ai ask <question>` - Ask a question to the AI
     -   `ai --model <model> ask <question>`: Specify the model to use for the query.
     -   `ai -m <model> ask <question>`: Short version to specify the model.
-    -   `ai --provider <provider> ask <question>`: Specify the AI provider (openai, anthropic, gemini, groq).
+    -   `ai --provider <provider> ask <question>`: Specify the AI provider (openai, anthropic, gemini, groq, openrouter).
     -   `ai -p <provider> ask <question>`: Short version to specify the provider.
     -   `ai --system-prompt <prompt> ask <question>`: Specify a custom system prompt for the current query.
     -   `ai -s <prompt> ask <question>`: Short version to specify the system prompt.
     -   `ai --raw ask <question>`: Output the raw response from the AI without code formatting.
 -   `ai analyze <file_path>` - Analyze the code in the specified file. The AI will attempt to identify syntax errors, logical bugs, and suggest best practices. You can also use the `--model`, `--provider`, `--system-prompt`, and `--raw` options with this command.
--   `ai setup` - Configure API keys and default settings for various AI providers (OpenAI, Anthropic, Gemini, Groq) and the default model.
+-   `ai setup` - Configure API keys and default settings for various AI providers (OpenAI, Anthropic, Gemini, Groq, OpenRouter) and the default model.
 -   `ai list-models` - List the available AI models supported by the CLI for each provider. You can also use this command to set a new default model interactively.
 -   `ai help [command]` - Display help information for a specific command.
 
@@ -77,29 +77,59 @@ Run `ai setup` to configure your keys and default preferences.
     -   claude-3-7-sonnet-20250219
     -   claude-3-5-sonnet-20241022
     -   claude-3-haiku-20240307
+    -   claude-3-opus-20250219
+    -   claude-3-medium-20241022
+    -   claude-3-large-20240307
 -   Gemini
     -   gemini-2.5-pro
     -   gemini-2.5-flash
     -   gemini-1.5-pro-0531
+    -   gemini-1.5-flash-0531
+    -   gemini-1.0-ultra-0105
+    -   gemini-1.0-pro-0104
+    -   gemini-1.0-pro-latest
+    -   gemini-1.0-pro-002
+    -   gemini-1.0-pro-001
+    -   gemini-1.0-flash-0104
+    -   gemini-1.0-flash-latest
+    -   gemini-1.0-flash-002
+    -   gemini-1.0-flash-001
     -   gemini-pro
+    -   gemini-pro-vision
+    -   gemini-ultra
+    -   gemini-ultra-vision
+    -   gemini-advanced
+    -   gemini-advanced-vision
+    -   gemini-1.0-medium-001
+    -   gemini-1.0-small-006
+    -   gemini-1.0-small-005
+    -   gemini-1.0-small-004
+    -   gemini-1.0-nano-004
 -   Groq
+    -   mixtral-8x7b-32768
+    -   llama2-70b-4096
+    -   llama2-7b-4096
     -   gemma2-9b-it
     -   llama-3.3-70b-versatile
     -   llama-3.1-8b-instant
     -   compound-beta
     -   compound-beta-mini
--   OpenRouter (Free Models)
-    -   agentica/deepcoder-14b-preview
-    -   meta/llama-4-scout
-    -   olympiccoder/olympiccoder-32b
-    -   dolphin/dolphin3.0-r1-mistral-24b
-    -   qwen/qwen2.5-coder-32b-instruct
-    -   deepseek/deepseek-r1-0528-qwen3-8b
-    -   meta/llama-4-maverick
-    -   thudm/glm-z1-32b
+-   OpenRouter
+    -   agentica/deepcoder-14b-preview (free)
+    -   meta/llama-4-scout (free)
+    -   olympiccoder/olympiccoder-32b (free)
+    -   dolphin/dolphin3.0-r1-mistral-24b (free)
+    -   qwen/qwen2.5-coder-32b-instruct (free)
+    -   deepseek/deepseek-r1-0528-qwen3-8b (free)
+    -   meta/llama-4-maverick (free)
+    -   thudm/glm-z1-32b (free)
+    -   anthropic/claude-3-5-sonnet
+    -   anthropic/claude-3-opus
+    -   google/gemini-1.5-pro
+    -   google/gemini-1.5-flash
 
 ## License
 
 MIT
 
-Enjoy using cli-ai! 😊
+Enjoy using cli-ai-plus! 😊
